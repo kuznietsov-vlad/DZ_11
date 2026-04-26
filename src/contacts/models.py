@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String, Date, ForeignKey
 
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from config.db import Base
 
@@ -14,3 +14,5 @@ class Contact(Base):
     phone_number: Mapped[str] = mapped_column(String, index=True)
     birthday: Mapped[Date] = mapped_column(Date)
     additional_info: Mapped[str | None] = mapped_column(String, nullable=True)
+    owner_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id') ,nullable=True)
+    owner: Mapped["User"] = relationship("User", back_populates="contacts")

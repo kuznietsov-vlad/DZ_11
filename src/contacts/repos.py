@@ -1,3 +1,4 @@
+
 from datetime import date, timedelta
 
 from dns.e164 import query
@@ -18,8 +19,8 @@ class ContactRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def create_contact(self, contact: ContactCreate) -> Contact:
-        new_contact = Contact(**contact.model_dump())
+    async def create_contact(self, contact: ContactCreate, owner_id: int) -> Contact:
+        new_contact = Contact(**contact.model_dump(), owner_id= owner_id  )
         self.session.add(new_contact)
         await self.session.commit()
         await self.session.refresh(new_contact)
@@ -50,8 +51,8 @@ class ContactRepository:
         await self.session.commit()
         return True
 
-    async def get_all_contacts(self):
-        query = select(Contact)
+    async def get_all_contacts(self, owner_id, skip:int = 0, limit: int =10):
+        query = select(Contact).where(Contact.owner_id == owner_id).offset(skip).limit(limit)
         result = await self.session.execute(query)
         return result.scalars().all()
 

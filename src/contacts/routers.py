@@ -3,6 +3,9 @@ from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from config.db import get_db
+from src.auth.models import User
+from src.auth.schema import RoleEnum
+from src.auth.utils import get_current_user, RoleChecker
 from src.contacts.repos import ContactRepository
 from src.contacts.schema import ContactResponse, Contact, ContactCreate, ContactUpdate
 from typing import Optional
@@ -20,9 +23,12 @@ router = APIRouter()
 
 
 @router.post("/", response_model=ContactResponse)
-async def create_contact(contact: ContactCreate, db: AsyncSession = Depends(get_db)):
+async def create_contact(contact: ContactCreate,
+                         db: AsyncSession = Depends(get_db),
+                         user: User = Depends(get_current_user)
+                         ):
     contact_repo = ContactRepository(db)
-    new_contact = await contact_repo.create_contact(contact)
+    new_contact = await contact_repo.create_contact(contact, user.id)
 
     return new_contact
 
@@ -39,9 +45,15 @@ async def find_contacts(
     return contacts
 
 @router.get("/", response_model=List[ContactResponse])
-async def get_all_contacts(db: AsyncSession = Depends(get_db)):
+async def get_all_contacts(
+        skip: int = 0,
+        limit: int = 10,
+        user: User = Depends(RoleChecker([RoleEnum.USER])),
+        db: AsyncSession = Depends(get_db)
+):
+
     repo = ContactRepository(db)
-    return await repo.get_all_contacts()
+    return await repo.get_all_contacts(user.id, skip, limit)
 
 
 
